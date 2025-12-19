@@ -71,6 +71,15 @@ function drawPoly(ctx: any, points: {x: number, y: number}[], color: string, str
   ctx.stroke();
 }
 
+function drawShadow(ctx: any, centerX: number, centerY: number) {
+  ctx.beginPath();
+  const radiusX = CONFIG.tileWidth / 4.5;
+  const radiusY = CONFIG.tileWidth / 9;
+  ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(40, 60, 20, 0.05)'; // A dark, semi-transparent green
+  ctx.fill();
+}
+
 function drawTuft(ctx: any, centerX: number, centerY: number) {
   ctx.strokeStyle = COLORS.grass.tuft;
   ctx.lineWidth = 2 * SCALE;
@@ -85,79 +94,71 @@ function drawTuft(ctx: any, centerX: number, centerY: number) {
   ctx.stroke();
 }
 
-function drawIsoBlock(ctx: any, gridX: number, gridY: number, offsetX: number, offsetY: number, hasTree: boolean) {
-  const isoX = (gridX - gridY) * (CONFIG.tileWidth / 2);
-  const isoY = (gridX + gridY) * (CONFIG.tileWidth / 4);
-
-  const x = offsetX + isoX;
-  const y = offsetY + isoY;
+function drawIsoBlock(ctx: any, pos: GridPosition, treeConfig: TreeConfig | undefined) {
+  const { gridX, gridY, pixelX, pixelY } = pos;
 
   const w = CONFIG.tileWidth;
   const h = CONFIG.tileWidth / 2;
 
-  const topCenterY = y + h / 2;
+  // The `pixelX` and `pixelY` from `pos` represent the true center of the tile's top face.
+  // We need to calculate the corner points relative to this center.
+  const topPointY = pixelY - (h / 2);
+  const soilY = topPointY + CONFIG.grassHeight;
 
-  // This function no longer needs to push to the global `positions` array
-  // as we pre-calculate them now.
-  /*
-  positions.push({
-    gridX,
-    gridY,
-    pixelX: Math.round(x),
-    pixelY: Math.round(topCenterY)
-  });
-  */
-
-  const soilY = y + CONFIG.grassHeight;
-  
   // Right Face (Soil)
   drawPoly(ctx, [
-    { x: x, y: soilY + h },
-    { x: x + w / 2, y: soilY + h / 2 },
-    { x: x + w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-    { x: x, y: soilY + h + CONFIG.soilHeight }
+    { x: pixelX, y: soilY + h },
+    { x: pixelX + w / 2, y: soilY + h / 2 },
+    { x: pixelX + w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
+    { x: pixelX, y: soilY + h + CONFIG.soilHeight }
   ], COLORS.soil.sideDark);
 
   // Left Face (Soil)
   drawPoly(ctx, [
-    { x: x, y: soilY + h },
-    { x: x - w / 2, y: soilY + h / 2 },
-    { x: x - w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-    { x: x, y: soilY + h + CONFIG.soilHeight }
+    { x: pixelX, y: soilY + h },
+    { x: pixelX - w / 2, y: soilY + h / 2 },
+    { x: pixelX - w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
+    { x: pixelX, y: soilY + h + CONFIG.soilHeight }
   ], COLORS.soil.sideLight);
 
   // Right Face (Grass)
   drawPoly(ctx, [
-    { x: x, y: y + h },
-    { x: x + w / 2, y: y + h / 2 },
-    { x: x + w / 2, y: y + h / 2 + CONFIG.grassHeight },
-    { x: x, y: y + h + CONFIG.grassHeight }
+    { x: pixelX, y: topPointY + h },
+    { x: pixelX + w / 2, y: topPointY + h / 2 },
+    { x: pixelX + w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
+    { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
   ], COLORS.grass.sideDark);
 
   // Left Face (Grass)
   drawPoly(ctx, [
-    { x: x, y: y + h },
-    { x: x - w / 2, y: y + h / 2 },
-    { x: x - w / 2, y: y + h / 2 + CONFIG.grassHeight },
-    { x: x, y: y + h + CONFIG.grassHeight }
+    { x: pixelX, y: topPointY + h },
+    { x: pixelX - w / 2, y: topPointY + h / 2 },
+    { x: pixelX - w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
+    { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
   ], COLORS.grass.sideLight);
 
   // Top Face
   const topVerts = [
-    { x: x, y: y },
-    { x: x + w / 2, y: y + h / 2 },
-    { x: x, y: y + h },
-    { x: x - w / 2, y: y + h / 2 }
+    { x: pixelX, y: topPointY },
+    { x: pixelX + w / 2, y: topPointY + h / 2 },
+    { x: pixelX, y: topPointY + h },
+    { x: pixelX - w / 2, y: topPointY + h / 2 }
   ];
   drawPoly(ctx, topVerts, COLORS.grass.top, COLORS.grass.gridStroke);
 
+  // Draw shadow if a tree is present
+  if (treeConfig) {
+    // The shadow is drawn at the center of the tile, where the trunk is placed.
+    drawShadow(ctx, pixelX, pixelY);
+  }
+
   // Random Details - only if no tree is on this tile
-  if (!hasTree) {
+  if (!treeConfig) {
     const seed = Math.sin(gridX * 12.9898 + gridY * 78.233) * 43758.5453;
     if ((seed - Math.floor(seed)) > 0.5) { // 50% chance
       const randX = (seed * 10) % (20 * SCALE) - (10 * SCALE);
       const randY = (seed * 20) % (10 * SCALE) - (5 * SCALE);
-      drawTuft(ctx, x + randX, topCenterY + randY);
+      drawTuft(ctx, pixelX + randX, pixelY + randY);
     }
   }
 }
@@ -238,10 +239,9 @@ async function main() {
   });
 
   for (const pos of sortedPositions) {
-    const hasTree = treeMap.has(`${pos.gridX},${pos.gridY}`);
-    drawIsoBlock(ctx, pos.gridX, pos.gridY, startX, startY, hasTree);
-
     const treeConfig = treeMap.get(`${pos.gridX},${pos.gridY}`);
+    drawIsoBlock(ctx, pos, treeConfig);
+
     if (treeConfig) {
         const image = loadedTrees.get(treeConfig.imagePath);
         if (image) {
@@ -249,8 +249,8 @@ async function main() {
             const w = image.width * treeScale;
             const h = image.height * treeScale;
             
-            const trunkOffsetX = (1080 - treeConfig.trunkStartPosition.x) * treeScale;
-            const trunkOffsetY = ( treeConfig.trunkStartPosition.y) * treeScale;
+            const trunkOffsetX = (treeConfig.trunkStartPosition.x) * treeScale;
+            const trunkOffsetY = (treeConfig.trunkStartPosition.y) * treeScale;
 
             const drawX = pos.pixelX - trunkOffsetX;
             const drawY = pos.pixelY - trunkOffsetY;

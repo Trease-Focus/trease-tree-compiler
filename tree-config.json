@@ -1,10 +1,30 @@
 {
-  "trees": [
-    { "imagePath": "samples/img1.png", "gridX": 1, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":428.3757433029874,"y":1000} },
-    { "imagePath": "samples/img2.png", "gridX": 3, "gridY": 1, "scale": 0.3, "trunkStartPosition":  {"x":448.89012053296267,"y":1000} },
-    { "imagePath": "samples/img3.png", "gridX": 2, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
-    { "imagePath": "samples/img4.png", "gridX": 3, "gridY": 3, "scale": 0.3, "trunkStartPosition":  {"x":471.0018222099691,"y":1000} }
-
-]
+   "trees": [
+      { "imagePath": "samples/img.png", "gridX": 1, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":624.1291835274843,"y":1000} },
+      { "imagePath": "samples/img2.png", "gridX": 2, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":448.89012053296267,"y":1000} },
+      { "imagePath": "samples/img3.png", "gridX": 3, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/cherry.png", "gridX": 4, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":785.6703668036546,"y":1000} },
+      { "imagePath": "samples/sakura.png", "gridX": 5, "gridY": 1, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/sakura2.png", "gridX": 1, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/sakura3.png", "gridX": 2, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/flower.png", "gridX": 3, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/flower2.png", "gridX": 4, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/flower3.png", "gridX": 5, "gridY": 2, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/img4.png", "gridX": 1, "gridY": 3, "scale": 0.3, "trunkStartPosition": {"x":471.0018222099691,"y":1000} },
+      { "imagePath": "samples/img.png", "gridX": 2, "gridY": 3, "scale": 0.3, "trunkStartPosition": {"x":624.1291835274843,"y":1000} },
+      { "imagePath": "samples/img2.png", "gridX": 3, "gridY": 3, "scale": 0.3, "trunkStartPosition": {"x":448.89012053296267,"y":1000} },
+      { "imagePath": "samples/img3.png", "gridX": 4, "gridY": 3, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/cherry.png", "gridX": 5, "gridY": 3, "scale": 0.3, "trunkStartPosition": {"x":785.6703668036546,"y":1000} },
+      { "imagePath": "samples/sakura.png", "gridX": 1, "gridY": 4, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/sakura2.png", "gridX": 2, "gridY": 4, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/sakura3.png", "gridX": 3, "gridY": 4, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} },
+      { "imagePath": "samples/flower.png", "gridX": 4, "gridY": 4, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/flower2.png", "gridX": 5, "gridY": 4, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/flower3.png", "gridX": 1, "gridY": 5, "scale": 0.3, "trunkStartPosition": {"x":540,"y":540} },
+      { "imagePath": "samples/img4.png", "gridX": 2, "gridY": 5, "scale": 0.3, "trunkStartPosition": {"x":471.0018222099691,"y":1000} },
+      { "imagePath": "samples/img.png", "gridX": 3, "gridY": 5, "scale": 0.3, "trunkStartPosition": {"x":624.1291835274843,"y":1000} },
+      { "imagePath": "samples/img2.png", "gridX": 4, "gridY": 5, "scale": 0.3, "trunkStartPosition": {"x":448.89012053296267,"y":1000} },
+      { "imagePath": "samples/img3.png", "gridX": 5, "gridY": 5, "scale": 0.3, "trunkStartPosition": {"x":604.7159825277463,"y":1000} }
+   ]
 }
 
