@@ -8,6 +8,8 @@ import { DEFAULT_CONFIG, type Config } from '../types/config';
 import type { Generate } from '../models/generate';
 import type { GeneratorResult } from '../types/generator-result';
 import type { Context } from 'baojs';
+import { get } from 'http';
+import { getFFmpegArgs } from '../core/ffmpeg-args';
 
 
 export class Tree implements Generate {
@@ -184,27 +186,8 @@ export class Tree implements Generate {
 
 
         // Generate video only
-        const ffmpegArgs = [
-            '-y',
-            '-f', 'image2pipe',
-            '-r', `${CONFIG.fps}`,
-            '-i', '-',
-            '-c:v', 'libvpx-vp9',
-            '-b:v', '4M',
-            '-pix_fmt', 'yuva420p',
-            '-auto-alt-ref', '0'
-        ];
-
-        // output decision
-        if (CONFIG.save_as_file) {
-            ffmpegArgs.push(CONFIG.filename);
-        } else {
-            ffmpegArgs.push(
-                '-f', 'webm',
-                'pipe:1'
-            );
-        }
-
+    
+        const ffmpegArgs = getFFmpegArgs(CONFIG);
 
         console.log(`🎥 Spawning FFmpeg process: ${CONFIG.filename}`);
         const ffmpeg = spawn('ffmpeg', ffmpegArgs);
@@ -212,8 +195,6 @@ export class Tree implements Generate {
         if (onStream) {
             onStream(ffmpeg, ffmpeg.stdout);
         }
-
-
         // --- RENDER LOOP ---
         const totalFrames = CONFIG.durationSeconds * CONFIG.fps;
 
