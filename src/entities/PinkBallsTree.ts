@@ -1,4 +1,4 @@
-import { createCanvas, CanvasRenderingContext2D } from 'canvas';
+import { createCanvas, CanvasRenderingContext2D, loadImage, Image } from 'canvas';
 import { spawn } from 'child_process';
 import { createHash, randomBytes } from 'crypto';
 import * as fs from 'fs';
@@ -75,6 +75,8 @@ export class PinkBallsTree implements Generate {
     async generate(con: Context, onStream?: (process: ChildProcessWithoutNullStreams, videoStream: ChildProcessWithoutNullStreams['stdout']) => void, CONFIG: Config = DEFAULT_CONFIG): Promise<GeneratorResult> {
 
         console.log("🌱 Initializing Perfect-Fit Bonsai Generator...");
+
+        const teddyImg = await loadImage('./assets/pink_teddy.png');
 
         const canvas = createCanvas(CONFIG.width, CONFIG.height);
         const ctx = canvas.getContext('2d');
@@ -179,21 +181,22 @@ export class PinkBallsTree implements Generate {
             for (const e of entities) {
                 const prevAlpha = ctx.globalAlpha;
                 ctx.globalAlpha = (e.opacity ?? 1);
-                ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                ctx.beginPath();
-                ctx.arc(e.center.x + 2, e.center.y + 5, e.radius, 0, Math.PI * 2);
-                ctx.fill();
-                const g = ctx.createRadialGradient(e.center.x - e.radius * 0.3, e.center.y - e.radius * 0.3, e.radius * 0.1, e.center.x, e.center.y, e.radius);
-                g.addColorStop(0, `rgba(${e.highlightColor.r},${e.highlightColor.g},${e.highlightColor.b},1)`);
-                g.addColorStop(1, `rgba(${e.baseColor.r},${e.baseColor.g},${e.baseColor.b},1)`);
-                ctx.beginPath();
-                ctx.fillStyle = g;
-                ctx.arc(e.center.x, e.center.y, e.radius, 0, Math.PI * 2);
-                ctx.fill();
+
                 if (e.type === 'fruit') {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    // Draw Teddy
+                    const size = e.radius * 2.5;
+                    ctx.drawImage(teddyImg, e.center.x - size / 2, e.center.y - size / 2, size, size);
+                } else {
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
                     ctx.beginPath();
-                    ctx.arc(e.center.x - e.radius * 0.3, e.center.y - e.radius * 0.3, e.radius * 0.25, 0, Math.PI * 2);
+                    ctx.arc(e.center.x + 2, e.center.y + 5, e.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    const g = ctx.createRadialGradient(e.center.x - e.radius * 0.3, e.center.y - e.radius * 0.3, e.radius * 0.1, e.center.x, e.center.y, e.radius);
+                    g.addColorStop(0, `rgba(${e.highlightColor.r},${e.highlightColor.g},${e.highlightColor.b},1)`);
+                    g.addColorStop(1, `rgba(${e.baseColor.r},${e.baseColor.g},${e.baseColor.b},1)`);
+                    ctx.beginPath();
+                    ctx.fillStyle = g;
+                    ctx.arc(e.center.x, e.center.y, e.radius, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 ctx.globalAlpha = prevAlpha;
@@ -277,36 +280,34 @@ export class PinkBallsTree implements Generate {
                 const prevAlpha = ctx.globalAlpha;
                 ctx.globalAlpha = (e.opacity ?? 1);
 
-                // Shadow (will be affected by globalAlpha so it fades with the entity)
-                ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                ctx.beginPath();
-                ctx.arc(e.center.x + 2, e.center.y + 5, e.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Main Gradient
-                const g = ctx.createRadialGradient(
-                    e.center.x - e.radius * 0.3,
-                    e.center.y - e.radius * 0.3,
-                    e.radius * 0.1,
-                    e.center.x,
-                    e.center.y,
-                    e.radius
-                );
-
-                // We rely on globalAlpha for fade; color stops are fully opaque
-                g.addColorStop(0, `rgba(${e.highlightColor.r},${e.highlightColor.g},${e.highlightColor.b},1)`);
-                g.addColorStop(1, `rgba(${e.baseColor.r},${e.baseColor.g},${e.baseColor.b},1)`);
-
-                ctx.beginPath();
-                ctx.fillStyle = g;
-                ctx.arc(e.center.x, e.center.y, e.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Extra shine for fruits
                 if (e.type === 'fruit') {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    // Draw Teddy
+                    const size = e.radius * 2.5;
+                    ctx.drawImage(teddyImg, e.center.x - size / 2, e.center.y - size / 2, size, size);
+                } else {
+                    // Shadow (will be affected by globalAlpha so it fades with the entity)
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
                     ctx.beginPath();
-                    ctx.arc(e.center.x - e.radius * 0.3, e.center.y - e.radius * 0.3, e.radius * 0.25, 0, Math.PI * 2);
+                    ctx.arc(e.center.x + 2, e.center.y + 5, e.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Main Gradient
+                    const g = ctx.createRadialGradient(
+                        e.center.x - e.radius * 0.3,
+                        e.center.y - e.radius * 0.3,
+                        e.radius * 0.1,
+                        e.center.x,
+                        e.center.y,
+                        e.radius
+                    );
+
+                    // We rely on globalAlpha for fade; color stops are fully opaque
+                    g.addColorStop(0, `rgba(${e.highlightColor.r},${e.highlightColor.g},${e.highlightColor.b},1)`);
+                    g.addColorStop(1, `rgba(${e.baseColor.r},${e.baseColor.g},${e.baseColor.b},1)`);
+
+                    ctx.beginPath();
+                    ctx.fillStyle = g;
+                    ctx.arc(e.center.x, e.center.y, e.radius, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
@@ -438,7 +439,7 @@ function generateFullTree(
 
                 entities.push({
                     center: new Vector2(eX, eY),
-                    radius: radius,
+                    radius: 50,
                     baseColor: { r: color.r, g: color.g, b: color.b, a: 1.0 },
                     highlightColor: { r: Math.min(255, color.r + 20), g: Math.min(255, color.g + 20), b: Math.min(255, color.b + 20), a: 1.0 },
                     type: 'fruit',
