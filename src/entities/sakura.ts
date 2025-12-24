@@ -158,11 +158,12 @@ export class Sakura implements Generate {
                     fallingPetals.push({
                         x: rand.nextFloat(centerX - range, centerX + range),
                         y: rand.nextFloat(centerY - range, centerY + range),
-                        size: rand.nextFloat(3 * scale, 6 * scale),
+                        size: rand.nextFloat(3 * scale, 12 * scale),
                         rotation: rand.nextFloat(0, Math.PI * 2),
                         velocity: new Vector2(rand.nextFloat(-1 * scale, 1 * scale), rand.nextFloat(1 * scale, 3 * scale)),
                         active: true,
-                        color: '#FFD1DC'
+                         color: 'rgba(255, 209, 220, 0.5)'
+                        
                     });
                 }
 
@@ -274,15 +275,16 @@ export class Sakura implements Generate {
             if (t > 0.4 && f % 5 === 0) { // Start dropping petals midway
                 const centerX = CONFIG.width / 2;
                 const centerY = CONFIG.height / 2;
-                const range = CONFIG.width * 0.2; // 20% of canvas width
+                const rangeX = CONFIG.width * 0.2; // 20% of canvas width
+                const rangeY = CONFIG.width * 0.2; // 10% of canvas width
                 fallingPetals.push({
-                    x: rand.nextFloat(centerX - range, centerX + range),
-                    y: rand.nextFloat(centerY - range, centerY + range),
-                    size: rand.nextFloat(3 * scale, 6 * scale),
+                    x: rand.nextFloat(centerX - rangeX, centerX + rangeX),
+                    y: rand.nextFloat(centerY - rangeY, centerY + rangeY),
+                    size: rand.nextFloat(3 * scale, 8 * scale),
                     rotation: rand.nextFloat(0, Math.PI * 2),
                     velocity: new Vector2(rand.nextFloat(-1 * scale, 1 * scale), rand.nextFloat(1 * scale, 3 * scale)),
                     active: true,
-                    color: '#FFD1DC'
+                    color: 'rgba(255, 209, 220, 0.8)'
                 });
             }
 

@@ -1,510 +1,378 @@
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-
 import { writeFile, readFile } from 'fs/promises';
 
-
 // --- Configuration ---
-
 const SCALE = 4; // 4x Resolution for high-quality (Retina) output
 
-
 interface TreeConfig {
-
   imagePath: string;
-
   gridX: number;
-
   gridY: number;
-
   scale: number;
-
-  trunkStartPosition: { x: number; y: number; };
-
 }
 
-
 const CONFIG = {
-
   tileWidth: 100 * SCALE,
-
   grassHeight: 15 * SCALE,
-
   soilHeight: 40 * SCALE,
-
   filename: 'isometric_grid_with_trees.png',
-
   dataFilename: 'grid_positions.json',
-
   treeConfigFilename: 'tree-config.json',
-
   // These will be set dynamically
-
   gridSize: 0,
-
   canvasWidth: 0,
-
   canvasHeight: 0,
-
 };
-
 
 // --- Palette ---
 const COLORS = {
-
   grass: {
-
-    top: '#A8C97A', // Lower saturation for a calming effect
-
-    sideLight: '#94B96C', // Lower saturation for a calming effect
-
-    sideDark: '#86A960', // Lower saturation for a calming effect
-
-    tuft: '#7D9F56', // Lower saturation for a calming effect
-
-    gridStroke: '#8BA564' // Lower saturation for a calming effect
-
+    top: '#9FD26A',       // slightly muted, less bright
+    sideLight: '#90C85E', // closer to top
+    sideDark: '#86BC57',  // reduced darkness gap
+    tuft: '#7FB351',      // softened
+    gridStroke: '#8EBF5A' // closer to surrounding greens
   },
-
   soil: {
-
-    sideLight: '#7A5A4E', // Lower saturation for a calming effect
-
-    sideDark: '#5F453C', // Lower saturation for a calming effect
-
+    sideLight: '#6F5448', // less contrast vs dark
+    sideDark: '#5F463C',  // softened dark
   }
-
 };
 
+
 interface GridPosition {
-
   gridX: number;
-
   gridY: number;
-
   pixelX: number;
-
   pixelY: number;
-
 }
 
-
 const positions: GridPosition[] = [];
-
 let treePlacements: TreeConfig[] = [];
-
 
 // --- Helper Functions ---
 
-
 /**
-
-* Draws a filled polygon.
-
-*/
-
-function drawPoly(ctx: any, points: { x: number, y: number }[], color: string, strokeColor?: string) {
-
+ * Draws a filled polygon.
+ */
+function drawPoly(ctx: any, points: {x: number, y: number}[], color: string, strokeColor?: string) {
   ctx.beginPath();
-
   ctx.moveTo(points[0].x, points[0].y);
-
   for (let i = 1; i < points.length; i++) {
-
     ctx.lineTo(points[i].x, points[i].y);
-
   }
-
   ctx.closePath();
-
+  
   ctx.fillStyle = color;
-
   ctx.fill();
-
 
   ctx.strokeStyle = strokeColor || color;
-
   ctx.lineWidth = 1 * SCALE;
-
   ctx.stroke();
-
 }
 
-
-function drawShadow(ctx: any, centerX: number, centerY: number) {
-
+function drawShadow(ctx: any, centerX: number, centerY: number, contentWidth?: number) {
   ctx.beginPath();
-
-  const radiusX = CONFIG.tileWidth / 4;
-
-  const radiusY = CONFIG.tileWidth / 15;
-
+  // Use content width if provided, otherwise use default
+  const radiusX = contentWidth ? contentWidth / 2 : CONFIG.tileWidth / 4.5;
+  const radiusY = radiusX / 2.5; // Maintain proportional height
   ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-
-  ctx.fillStyle = 'rgba(40, 60, 20, 0.05)'; // A dark, semi-transparent green
-
+  ctx.fillStyle = 'rgba(40, 60, 20, 0.066)'; // A dark, semi-transparent green
   ctx.fill();
-
 }
-
 
 function drawTuft(ctx: any, centerX: number, centerY: number) {
-
   ctx.strokeStyle = COLORS.grass.tuft;
-
   ctx.lineWidth = 2 * SCALE;
-
   ctx.lineCap = 'round';
-
+  
   const size = 6 * SCALE;
-
+  
   ctx.beginPath();
-
-  ctx.moveTo(centerX - size, centerY - size / 2);
-
-  ctx.lineTo(centerX, centerY + size / 2);
-
-  ctx.lineTo(centerX + size, centerY - size / 2);
-
+  ctx.moveTo(centerX - size, centerY - size/2);
+  ctx.lineTo(centerX, centerY + size/2);
+  ctx.lineTo(centerX + size, centerY - size/2);
   ctx.stroke();
-
 }
 
+/**
+ * Detects the actual bottom and horizontal center of the tree content.
+ * Returns { xOffset, yPadding, contentWidth } where:
+ * - yPadding: number of transparent pixels from the bottom of the image
+ * - xOffset: horizontal offset from image center to content center
+ * - contentWidth: actual width of the content at the bottom in pixels
+ */
+function detectTreeContentPosition(image: any): { xOffset: number, yPadding: number, contentWidth: number } {
+  // Create a temporary canvas to read pixel data
+  const tempCanvas = createCanvas(image.width, image.height);
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.drawImage(image, 0, 0);
+  
+  const imageData = tempCtx.getImageData(0, 0, image.width, image.height);
+  const data = imageData.data;
+  
+  // Find all rows with visible pixels and calculate their average darkness
+  const candidateRows: { y: number, darkness: number }[] = [];
+  
+  for (let y = image.height - 1; y >= 0; y--) {
+    let hasPixels = false;
+    let totalDarkness = 0;
+    let pixelCount = 0;
+    
+    for (let x = 0; x < image.width; x++) {
+      const index = (y * image.width + x) * 4;
+      const r = data[index];
+      const g = data[index + 1];
+      const b = data[index + 2];
+      const alpha = data[index + 3];
+      
+      if (alpha > 245) { // Has visible content
+        hasPixels = true;
+        // Calculate darkness (0 = black, 765 = white)
+        // We invert it so higher = darker
+        const brightness = r + g + b;
+        const darkness = (765 - brightness) * (alpha / 255); // Weight by opacity
+        totalDarkness += darkness;
+        pixelCount++;
+      }
+    }
+    
+    if (hasPixels && pixelCount > 0) {
+      const avgDarkness = totalDarkness / pixelCount;
+      candidateRows.push({ y, darkness: avgDarkness });
+      
+      // Only consider bottom 30% of image to avoid scanning entire tree
+      if (candidateRows.length > image.height * 0.3) break;
+    }
+  }
+  
+  // If no opaque pixels found, return zeros
+  if (candidateRows.length === 0) {
+    return { xOffset: 0, yPadding: 0, contentWidth: 0 };
+  }
+  
+  // Find the darkest row among candidates
+  let darkestRow = candidateRows[0];
+  for (const candidate of candidateRows) {
+    if (candidate.darkness > darkestRow.darkness) {
+      darkestRow = candidate;
+    }
+  }
+  
+  const bottomY = darkestRow.y;
+  const yPadding = image.height - bottomY - 1;
+  
+  // Now scan that darkest bottom row to find leftmost and rightmost pixels
+  let leftmost = image.width;
+  let rightmost = -1;
+  
+  for (let x = 0; x < image.width; x++) {
+    const index = (bottomY * image.width + x) * 4;
+    const alpha = data[index + 3];
+    
+    if (alpha > 245) {
+      if (x < leftmost) leftmost = x;
+      if (x > rightmost) rightmost = x;
+    }
+  }
+  
+  // Calculate the center of the content in that bottom row
+  const contentCenterX = (leftmost + rightmost) / 2;
+  const imageCenterX = image.width / 2;
+  const xOffset = contentCenterX - imageCenterX;
+  const contentWidth = rightmost - leftmost + 1;
+  
+  return { xOffset, yPadding, contentWidth };
+}
 
-function drawIsoBlock(ctx: any, pos: GridPosition, treeConfig: TreeConfig | undefined) {
-
+function drawIsoBlock(ctx: any, pos: GridPosition, treeConfig: TreeConfig | undefined, shadowWidth?: number) {
   const { gridX, gridY, pixelX, pixelY } = pos;
 
-
   const w = CONFIG.tileWidth;
-
   const h = CONFIG.tileWidth / 2;
 
-
   // The `pixelX` and `pixelY` from `pos` represent the true center of the tile's top face.
-
   // We need to calculate the corner points relative to this center.
-
   const topPointY = pixelY - (h / 2);
-
   const soilY = topPointY + CONFIG.grassHeight;
 
-
   // Right Face (Soil)
-
   drawPoly(ctx, [
-
     { x: pixelX, y: soilY + h },
-
     { x: pixelX + w / 2, y: soilY + h / 2 },
-
     { x: pixelX + w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-
     { x: pixelX, y: soilY + h + CONFIG.soilHeight }
-
   ], COLORS.soil.sideDark);
 
-
   // Left Face (Soil)
-
   drawPoly(ctx, [
-
     { x: pixelX, y: soilY + h },
-
     { x: pixelX - w / 2, y: soilY + h / 2 },
-
     { x: pixelX - w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-
     { x: pixelX, y: soilY + h + CONFIG.soilHeight }
-
   ], COLORS.soil.sideLight);
 
-
   // Right Face (Grass)
-
   drawPoly(ctx, [
-
     { x: pixelX, y: topPointY + h },
-
     { x: pixelX + w / 2, y: topPointY + h / 2 },
-
     { x: pixelX + w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
-
     { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
-
   ], COLORS.grass.sideDark);
 
-
   // Left Face (Grass)
-
   drawPoly(ctx, [
-
     { x: pixelX, y: topPointY + h },
-
     { x: pixelX - w / 2, y: topPointY + h / 2 },
-
     { x: pixelX - w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
-
     { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
-
   ], COLORS.grass.sideLight);
 
-
   // Top Face
-
   const topVerts = [
-
     { x: pixelX, y: topPointY },
-
     { x: pixelX + w / 2, y: topPointY + h / 2 },
-
     { x: pixelX, y: topPointY + h },
-
     { x: pixelX - w / 2, y: topPointY + h / 2 }
-
   ];
-
-
-  // Create a gradient for the top face to give it a subtle divider effect
-
-  const gradient = ctx.createLinearGradient(
-
-    pixelX, topPointY,
-
-    pixelX, topPointY + h
-
-  );
-
-  gradient.addColorStop(0, COLORS.grass.gridStroke);
-
-  gradient.addColorStop(0.9, COLORS.grass.top); // Keep most of the area uniform
-
-  gradient.addColorStop(1, COLORS.grass.gridStroke); // Add a subtle stroke effect at the edge
-
-
-  drawPoly(ctx, topVerts, gradient, COLORS.grass.gridStroke);
-
+  drawPoly(ctx, topVerts, COLORS.grass.top, COLORS.grass.gridStroke);
 
   // Draw shadow if a tree is present
-
   if (treeConfig) {
-
     // The shadow is drawn at the center of the tile, where the trunk is placed.
-
-    drawShadow(ctx, pixelX, pixelY);
-
+    drawShadow(ctx, pixelX, pixelY, shadowWidth);
   }
-
 
   // Random Details - only if no tree is on this tile
-
   if (!treeConfig) {
-
     const seed = Math.sin(gridX * 12.9898 + gridY * 78.233) * 43758.5453;
-
     if ((seed - Math.floor(seed)) > 0.5) { // 50% chance
-
       const randX = (seed * 10) % (20 * SCALE) - (10 * SCALE);
-
       const randY = (seed * 20) % (10 * SCALE) - (5 * SCALE);
-
       drawTuft(ctx, pixelX + randX, pixelY + randY);
-
     }
-
   }
-
 }
 
-
 // --- Main Execution ---
-
 async function main() {
-
   console.log("Reading configuration files...");
-
   try {
-
     const treeConfigFile = await readFile(CONFIG.treeConfigFilename, 'utf-8');
-
     const treeConfigData = JSON.parse(treeConfigFile);
-
     treePlacements = treeConfigData.trees;
-
   } catch (error) {
-
     console.error(`Error reading or parsing configuration files:`, error);
-
     return;
-
   }
-
 
   // Determine grid size from tree placements
-
   let maxGridDim = 3; // Minimum size
-
   for (const tree of treePlacements) {
-
     if (tree.gridX > maxGridDim - 1) maxGridDim = tree.gridX + 1;
-
     if (tree.gridY > maxGridDim - 1) maxGridDim = tree.gridY + 1;
-
   }
-
   CONFIG.gridSize = maxGridDim;
 
-
   // Dynamically set canvas size
-
   const totalGridWidth = (CONFIG.gridSize * 2) * (CONFIG.tileWidth / 2);
-
   CONFIG.canvasWidth = totalGridWidth + (100 * SCALE);
-
   CONFIG.canvasHeight = (CONFIG.gridSize) * (CONFIG.tileWidth / 2) + (CONFIG.soilHeight + CONFIG.grassHeight) * 2 + (200 * SCALE);
 
-
-
   const canvas = createCanvas(CONFIG.canvasWidth, CONFIG.canvasHeight);
-
   const ctx = canvas.getContext('2d');
-
 
   console.log(`Generating ${CONFIG.gridSize}x${CONFIG.gridSize} Grid at ${SCALE}x Resolution...`);
 
-
   const startX = CONFIG.canvasWidth / 2;
-
   const startY = (150 * SCALE);
 
-
   // Create a map for quick lookup of trees by grid position
-
   const treeMap = new Map<string, TreeConfig>();
-
   for (const tree of treePlacements) {
-
     treeMap.set(`${tree.gridX},${tree.gridY}`, tree);
-
   }
 
-
-  // Load all unique tree images
-
+  // Load all unique tree images and detect content position
   const loadedTrees = new Map<string, any>();
-
+  const treeOffsets = new Map<string, { xOffset: number, yPadding: number }>();
   for (const tree of treePlacements) {
-
-    if (!loadedTrees.has(tree.imagePath)) {
-
-      try {
-
-        const image = await loadImage(tree.imagePath);
-
-        loadedTrees.set(tree.imagePath, image);
-
-        console.log(`Loaded image: ${tree.imagePath}`);
-
-      } catch (e) {
-
-        console.error(`Could not load image: ${tree.imagePath}`);
-
+      if (!loadedTrees.has(tree.imagePath)) {
+          try {
+            const image = await loadImage(tree.imagePath);
+            loadedTrees.set(tree.imagePath, image);
+            
+            // Detect content position
+            const offsets = detectTreeContentPosition(image);
+            treeOffsets.set(tree.imagePath, offsets);
+            
+            console.log(`Loaded image: ${tree.imagePath} (xOffset: ${offsets.xOffset.toFixed(1)}px, yPadding: ${offsets.yPadding}px)`);
+          } catch (e) {
+              console.error(`Could not load image: ${tree.imagePath}`);
+          }
       }
-
-    }
-
   }
-
 
   // First, generate all grid positions
-
   for (let y = 0; y < CONFIG.gridSize; y++) {
-
     for (let x = 0; x < CONFIG.gridSize; x++) {
-
-      const isoX = (x - y) * (CONFIG.tileWidth / 2);
-
-      const isoY = (x + y) * (CONFIG.tileWidth / 4);
-
-      const pixelX = startX + isoX;
-
-      const pixelY = startY + isoY + (CONFIG.tileWidth / 4);
-
-      positions.push({
-
-        gridX: x,
-
-        gridY: y,
-
-        pixelX: Math.round(pixelX),
-
-        pixelY: Math.round(pixelY)
-
-      });
-
+        const isoX = (x - y) * (CONFIG.tileWidth / 2);
+        const isoY = (x + y) * (CONFIG.tileWidth / 4);
+        const pixelX = startX + isoX;
+        const pixelY = startY + isoY + (CONFIG.tileWidth / 4);
+        positions.push({
+            gridX: x,
+            gridY: y,
+            pixelX: Math.round(pixelX),
+            pixelY: Math.round(pixelY)
+        });
     }
-
   }
-
 
   // Draw grid and objects in sorted order
-
   const sortedPositions = [...positions].sort((a, b) => {
-
     return (a.gridY + a.gridX) - (b.gridY + b.gridX);
-
   });
-
-
-  for (const pos of sortedPositions) {
-
+for (const pos of sortedPositions) {
     const treeConfig = treeMap.get(`${pos.gridX},${pos.gridY}`);
-
     drawIsoBlock(ctx, pos, treeConfig);
-
-
-    if (treeConfig) {
-
-      const image = loadedTrees.get(treeConfig.imagePath);
-
-      if (image) {
-
+// Inside your sortedPositions loop...
+if (treeConfig) {
+    const image = loadedTrees.get(treeConfig.imagePath);
+    if (image) {
+        // 1. Determine the actual size the tree will be drawn at
         const treeScale = treeConfig.scale || 0.5;
+        const drawWidth = image.width * treeScale;
+        const drawHeight = image.height * treeScale;
+        
+        // 2. Get the detected content position offsets for this image
+        const offsets = treeOffsets.get(treeConfig.imagePath) || { xOffset: 0, yPadding: 0 };
+        const xOffsetScaled = offsets.xOffset * treeScale;
+        const yPaddingScaled = offsets.yPadding * treeScale;
+        
+        /**
+         * AUTOMATIC CENTERING LOGIC WITH CONTENT DETECTION:
+         * We want the actual BOTTOM-CENTER of the tree content to align with the tile center.
+         * * drawX: Subtract half the width to center the image, then adjust by xOffset
+         *   to align the content center (not image center) with the tile.
+         * * drawY: Subtract the FULL height, then ADD back the bottom padding
+         *   to compensate for transparent pixels at the bottom.
+         */
+        const drawX = pos.pixelX - (drawWidth / 2) - xOffsetScaled;
+        const drawY = pos.pixelY - drawHeight + yPaddingScaled;
 
-        const w = image.width * treeScale;
-
-        const h = image.height * treeScale;
-
-        const trunkOffsetX = (treeConfig.trunkStartPosition.x) * treeScale;
-
-        const trunkOffsetY = (treeConfig.trunkStartPosition.y) * treeScale;
-
-
-        const drawX = pos.pixelX - trunkOffsetX;
-
-        const drawY = pos.pixelY - trunkOffsetY;
-
-
-        ctx.drawImage(image, drawX, drawY, w, h);
-
+        ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+ 
       }
-
-    }
-
-  }
-
-
-  const buffer = await canvas.encode('png');
-
-  await writeFile(CONFIG.filename, buffer);
-
-  await writeFile(CONFIG.dataFilename, JSON.stringify(positions, null, 2));
-
-
-  console.log(`✅ HD Grid with trees generated: ${CONFIG.filename} (${CONFIG.canvasWidth}x${CONFIG.canvasHeight})`);
-
-  console.log(`✅ Positions saved: ${CONFIG.dataFilename}`);
-
+}
 }
 
+  const buffer = await canvas.encode('png');
+  await writeFile(CONFIG.filename, buffer);
+  await writeFile(CONFIG.dataFilename, JSON.stringify(positions, null, 2));
 
-main().catch(console.error); 
+  console.log(`✅ HD Grid with trees generated: ${CONFIG.filename} (${CONFIG.canvasWidth}x${CONFIG.canvasHeight})`);
+  console.log(`✅ Positions saved: ${CONFIG.dataFilename}`);
+}
+
+main().catch(console.error);
