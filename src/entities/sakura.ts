@@ -1,5 +1,5 @@
 import { createCanvas, CanvasRenderingContext2D } from 'canvas';
-import { spawn } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import { createHash, randomBytes } from 'crypto';
 import * as fs from 'fs';
 import { SeededRandom } from '../core/seeded-random';
@@ -308,6 +308,15 @@ export class Sakura implements Generate {
         }
         if(ffmpeg){
             ffmpeg.stdin.end();
+
+            // Wait for FFmpeg to finish encoding
+            await new Promise<void>((resolve, reject) => {
+                (ffmpeg as any).on('close', (code: number | null) => {
+                    if (code === 0) resolve();
+                    else reject(new Error(`FFmpeg exited with code ${code}`));
+                });
+                (ffmpeg as any).on('error', reject);
+            });
         }
     
         return {

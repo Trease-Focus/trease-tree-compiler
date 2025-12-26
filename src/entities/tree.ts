@@ -303,6 +303,15 @@ export class Tree implements Generate {
         }
         ffmpeg.stdin.end();
 
+        // Wait for FFmpeg to finish encoding
+        await new Promise<void>((resolve, reject) => {
+            ffmpeg.on('close', (code) => {
+                if (code === 0) resolve();
+                else reject(new Error(`FFmpeg exited with code ${code}`));
+            });
+            ffmpeg.on('error', reject);
+        });
+
         return {
             videoPath: CONFIG.filename,
             trunkStartPosition: { x: offsetX, y: offsetY }

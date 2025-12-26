@@ -1,5 +1,5 @@
 import { createCanvas, CanvasRenderingContext2D } from 'canvas';
-import { spawn, type ChildProcessWithoutNullStreams } from 'child_process';
+import { spawn, type ChildProcessWithoutNullStreams, type ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import { SeededRandom } from '../core/seeded-random';
 import type { Color } from '../types/color';
@@ -275,6 +275,15 @@ export class Cedar implements Generate {
         }
 
         ffmpeg.stdin.end();
+
+        // Wait for FFmpeg to finish encoding
+        await new Promise<void>((resolve, reject) => {
+            (ffmpeg as any).on('close', (code: number | null) => {
+                if (code === 0) resolve();
+                else reject(new Error(`FFmpeg exited with code ${code}`));
+            });
+            (ffmpeg as any).on('error', reject);
+        });
         
         return {
             videoPath: CONFIG.filename,
