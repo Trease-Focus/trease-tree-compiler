@@ -11,7 +11,7 @@ export interface TreeConfig {
   scale: number;
 }
 
-export const CONFIG = {
+export const DEFAULT_CONFIG = {
   tileWidth: 100 * SCALE,
   grassHeight: 15 * SCALE,
   soilHeight: 40 * SCALE,
@@ -74,7 +74,7 @@ export function drawPoly(ctx: any, points: {x: number, y: number}[], color: stri
 export function drawShadow(ctx: any, centerX: number, centerY: number, contentWidth?: number) {
   ctx.beginPath();
   // Use content width if provided, otherwise use default
-  const radiusX = contentWidth ? contentWidth / 2 : CONFIG.tileWidth / 4.5;
+  const radiusX = contentWidth ? contentWidth / 2 : DEFAULT_CONFIG.tileWidth / 4.5;
   const radiusY = radiusX / 2.5; // Maintain proportional height
   ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
   ctx.fillStyle = 'rgba(40, 60, 20, 0.066)'; // A dark, semi-transparent green
@@ -188,44 +188,44 @@ export function detectTreeContentPosition(image: any): { xOffset: number, yPaddi
 export function drawIsoBlock(ctx: any, pos: GridPosition, treeConfig: TreeConfig | undefined, shadowWidth?: number) {
   const { gridX, gridY, pixelX, pixelY } = pos;
 
-  const w = CONFIG.tileWidth;
-  const h = CONFIG.tileWidth / 2;
+  const w = DEFAULT_CONFIG.tileWidth;
+  const h = DEFAULT_CONFIG.tileWidth / 2;
 
   // The `pixelX` and `pixelY` from `pos` represent the true center of the tile's top face.
   // We need to calculate the corner points relative to this center.
   const topPointY = pixelY - (h / 2);
-  const soilY = topPointY + CONFIG.grassHeight;
+  const soilY = topPointY + DEFAULT_CONFIG.grassHeight;
 
   // Right Face (Soil)
   drawPoly(ctx, [
     { x: pixelX, y: soilY + h },
     { x: pixelX + w / 2, y: soilY + h / 2 },
-    { x: pixelX + w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-    { x: pixelX, y: soilY + h + CONFIG.soilHeight }
+    { x: pixelX + w / 2, y: soilY + h / 2 + DEFAULT_CONFIG.soilHeight },
+    { x: pixelX, y: soilY + h + DEFAULT_CONFIG.soilHeight }
   ], COLORS.soil.sideDark);
 
   // Left Face (Soil)
   drawPoly(ctx, [
     { x: pixelX, y: soilY + h },
     { x: pixelX - w / 2, y: soilY + h / 2 },
-    { x: pixelX - w / 2, y: soilY + h / 2 + CONFIG.soilHeight },
-    { x: pixelX, y: soilY + h + CONFIG.soilHeight }
+    { x: pixelX - w / 2, y: soilY + h / 2 + DEFAULT_CONFIG.soilHeight },
+    { x: pixelX, y: soilY + h + DEFAULT_CONFIG.soilHeight }
   ], COLORS.soil.sideLight);
 
   // Right Face (Grass)
   drawPoly(ctx, [
     { x: pixelX, y: topPointY + h },
     { x: pixelX + w / 2, y: topPointY + h / 2 },
-    { x: pixelX + w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
-    { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
+    { x: pixelX + w / 2, y: topPointY + h / 2 + DEFAULT_CONFIG.grassHeight },
+    { x: pixelX, y: topPointY + h + DEFAULT_CONFIG.grassHeight }
   ], COLORS.grass.sideDark);
 
   // Left Face (Grass)
   drawPoly(ctx, [
     { x: pixelX, y: topPointY + h },
     { x: pixelX - w / 2, y: topPointY + h / 2 },
-    { x: pixelX - w / 2, y: topPointY + h / 2 + CONFIG.grassHeight },
-    { x: pixelX, y: topPointY + h + CONFIG.grassHeight }
+    { x: pixelX - w / 2, y: topPointY + h / 2 + DEFAULT_CONFIG.grassHeight },
+    { x: pixelX, y: topPointY + h + DEFAULT_CONFIG.grassHeight }
   ], COLORS.grass.sideLight);
 
   // Top Face
@@ -261,7 +261,7 @@ export interface GridOptions {
 }
 
 // --- Exported Grid Generation Function ---
-export async function generateGrid(options: GridOptions): Promise<Buffer> {
+export async function generateGrid(options: GridOptions,): Promise<Buffer> {
   const { trees, outputFilename, dataFilename } = options;
   const positions: GridPosition[] = [];
 
@@ -271,19 +271,23 @@ export async function generateGrid(options: GridOptions): Promise<Buffer> {
     if (tree.gridX > maxGridDim - 1) maxGridDim = tree.gridX + 1;
     if (tree.gridY > maxGridDim - 1) maxGridDim = tree.gridY + 1;
   }
-  CONFIG.gridSize = maxGridDim;
+  DEFAULT_CONFIG.gridSize = maxGridDim;
 
-  // Dynamically set canvas size
-  const totalGridWidth = (CONFIG.gridSize * 2) * (CONFIG.tileWidth / 2);
-  CONFIG.canvasWidth = totalGridWidth + (100 * SCALE);
-  CONFIG.canvasHeight = (CONFIG.gridSize) * (CONFIG.tileWidth / 2) + (CONFIG.soilHeight + CONFIG.grassHeight) * 2 + (200 * SCALE);
+  // Dynamically set canvas size (square)
+  const totalGridWidth = (DEFAULT_CONFIG.gridSize * 2) * (DEFAULT_CONFIG.tileWidth / 2);
+  const calculatedWidth = totalGridWidth + (100 * SCALE);
+  const calculatedHeight = (DEFAULT_CONFIG.gridSize) * (DEFAULT_CONFIG.tileWidth / 2) + (DEFAULT_CONFIG.soilHeight + DEFAULT_CONFIG.grassHeight) * 2 + (200 * SCALE);
+  // Use the larger dimension to create a square canvas
+  const canvasSize = Math.max(calculatedWidth, calculatedHeight);
+  DEFAULT_CONFIG.canvasWidth = canvasSize;
+  DEFAULT_CONFIG.canvasHeight = canvasSize;
 
-  const canvas = createCanvas(CONFIG.canvasWidth, CONFIG.canvasHeight);
+  const canvas = createCanvas(DEFAULT_CONFIG.canvasWidth, DEFAULT_CONFIG.canvasHeight);
   const ctx = canvas.getContext('2d');
 
-  console.log(`Generating ${CONFIG.gridSize}x${CONFIG.gridSize} Grid at ${SCALE}x Resolution...`);
+  console.log(`Generating ${DEFAULT_CONFIG.gridSize}x${DEFAULT_CONFIG.gridSize} Grid at ${SCALE}x Resolution...`);
 
-  const startX = CONFIG.canvasWidth / 2;
+  const startX = DEFAULT_CONFIG.canvasWidth / 2;
   const startY = (150 * SCALE);
 
   // Create a map for quick lookup of trees by grid position
@@ -310,12 +314,12 @@ export async function generateGrid(options: GridOptions): Promise<Buffer> {
   }
 
   // Generate all grid positions
-  for (let y = 0; y < CONFIG.gridSize; y++) {
-    for (let x = 0; x < CONFIG.gridSize; x++) {
-      const isoX = (x - y) * (CONFIG.tileWidth / 2);
-      const isoY = (x + y) * (CONFIG.tileWidth / 4);
+  for (let y = 0; y < DEFAULT_CONFIG.gridSize; y++) {
+    for (let x = 0; x < DEFAULT_CONFIG.gridSize; x++) {
+      const isoX = (x - y) * (DEFAULT_CONFIG.tileWidth / 2);
+      const isoY = (x + y) * (DEFAULT_CONFIG.tileWidth / 4);
       const pixelX = startX + isoX;
-      const pixelY = startY + isoY + (CONFIG.tileWidth / 4);
+      const pixelY = startY + isoY + (DEFAULT_CONFIG.tileWidth / 4);
       positions.push({
         gridX: x,
         gridY: y,
@@ -358,7 +362,7 @@ export async function generateGrid(options: GridOptions): Promise<Buffer> {
     console.log(`✅ Positions saved: ${dataFilename}`);
   }
 
-  console.log(`✅ HD Grid generated: ${outputFilename} (${CONFIG.canvasWidth}x${CONFIG.canvasHeight})`);
+  console.log(`✅ HD Grid generated: ${outputFilename} (${DEFAULT_CONFIG.canvasWidth}x${DEFAULT_CONFIG.canvasHeight})`);
   return buffer;
 }
 
@@ -367,7 +371,7 @@ async function main() {
   console.log("Reading configuration files...");
   let treePlacements: TreeConfig[] = [];
   try {
-    const treeConfigFile = await readFile(CONFIG.treeConfigFilename, 'utf-8');
+    const treeConfigFile = await readFile(DEFAULT_CONFIG.treeConfigFilename, 'utf-8');
     const treeConfigData = JSON.parse(treeConfigFile);
     treePlacements = treeConfigData.trees;
   } catch (error) {
@@ -377,8 +381,8 @@ async function main() {
 
   await generateGrid({
     trees: treePlacements,
-    outputFilename: CONFIG.filename,
-    dataFilename: CONFIG.dataFilename
+    outputFilename: DEFAULT_CONFIG.filename,
+    dataFilename: DEFAULT_CONFIG.dataFilename
   });
 }
 
