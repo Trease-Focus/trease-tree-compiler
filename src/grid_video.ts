@@ -272,7 +272,7 @@ const ffmpegArgs = [
     '-c:v', 'libvpx-vp9',         // Decode with VP9
     '-i', treeWebmPath,          // Cedar video (transparent)
     '-filter_complex',
-    `color=c=#C7C3BC:s=${DEFAULT_CONFIG.canvasWidth}x${DEFAULT_CONFIG.canvasHeight}:r=${DEFAULT_CONFIG.fps}[bg];` +
+    `color=c=#FFFFFF:s=${DEFAULT_CONFIG.canvasWidth}x${DEFAULT_CONFIG.canvasHeight}:r=${DEFAULT_CONFIG.fps}[bg];` +
     `[1:v]scale=${Math.round(drawWidth)}:${Math.round(drawHeight)}:flags=lanczos,format=yuva420p[scaled];` +
     `[0:v]format=yuva420p[base];` +
     `[bg][base]overlay=0:0:shortest=1[withgrid];` +
