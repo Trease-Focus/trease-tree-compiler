@@ -13,7 +13,6 @@ import {
 import type { GridPosition } from './core/grid';
 import { applyCanvasFilter, type FilterName } from './core/filters';
 
-// Re-export for backwards compatibility
 export { SCALE, GRID_CONFIG as DEFAULT_CONFIG };
 export type { GridPosition };
 
@@ -37,11 +36,9 @@ export interface GridOptions {
   filter?: FilterName;
 }
 
-// --- Exported Grid Generation Function ---
 export async function generateGrid(options: GridOptions): Promise<Buffer> {
   const { trees, outputFilename, dataFilename, filter = 'none' } = options;
 
-  // Determine grid size from tree placements
   let maxGridDim = 1;
   for (const tree of trees) {
     if (tree.gridX > maxGridDim - 1) maxGridDim = tree.gridX + 1;
@@ -49,7 +46,6 @@ export async function generateGrid(options: GridOptions): Promise<Buffer> {
   }
   GRID_CONFIG.gridSize = maxGridDim;
 
-  // Dynamically set canvas size
   const dimensions = calculateCanvasDimensions(maxGridDim);
   GRID_CONFIG.canvasWidth = dimensions.width;
   GRID_CONFIG.canvasHeight = dimensions.height;

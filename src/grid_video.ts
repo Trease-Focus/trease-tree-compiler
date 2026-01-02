@@ -127,7 +127,7 @@ async function main() {
   const cedarPngPath = 'maple.png';
   const cedarWebmPath = 'maple.webm';
   const outputPath = 'maple_on_grid.webm';
-  const treeScale = 1; // Adjust as needed
+  const treeScale = 1; 
 
   await generateGridVideo(cedarPngPath, cedarWebmPath, outputPath, treeScale);
 }
