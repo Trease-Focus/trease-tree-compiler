@@ -11,7 +11,6 @@ import {
   calculateTreeDrawPosition,
 } from './core/grid';
 import type { GridPosition } from './core/grid';
-import { getFilter, type FilterName } from './core/filters';
 
 // Re-export for backwards compatibility
 export { SCALE, GRID_CONFIG as DEFAULT_CONFIG };
@@ -44,8 +43,7 @@ export async function generateGridVideo(
   treePngPath: string,
   treeWebmPath: string,
   outputPath: string,
-  treeScale: number = 1,
-  filter: FilterName = 'winter'
+  treeScale: number = 1
 ): Promise<void> {
   console.log('Loading tree image for anchor calculation...');
   const anchorImage = await loadImage(treePngPath);
@@ -89,29 +87,18 @@ export async function generateGridVideo(
 
   console.log('Compositing video with ffmpeg...');
   
-  // Get filter configuration
-  const filterConfig = getFilter(filter);
-  const hasFilter = filter !== 'none' && filterConfig.ffmpegFilter;
-  if (hasFilter) {
-    console.log(`Applying '${filter}' filter...`);
-  }
-  
-  // Build filter chain - add color grading filter if specified
-  const filterChain = 
-    `color=c=#FFFFFF:s=${GRID_CONFIG.canvasWidth}x${GRID_CONFIG.canvasHeight}:r=${VIDEO_CONFIG.fps}[bg];` +
-    `[1:v]scale=${Math.round(drawWidth)}:${Math.round(drawHeight)}:flags=lanczos,format=yuva420p` +
-    (hasFilter ? `[scaled];[scaled]${filterConfig.ffmpegFilter}[filtered]` : `[filtered]`) + `;` +
-    `[0:v]format=yuva420p[base];` +
-    `[bg][base]overlay=0:0:shortest=1[withgrid];` +
-    `[withgrid][filtered]overlay=${Math.round(treeX)}:${Math.round(treeY)}:shortest=1[out]`;
-  
   // FFmpeg command to overlay tree video on base grid
   const ffmpegArgs = [
     '-loop', '1',                 // Loop the base grid image
     '-i', baseGridPath,           // Base grid image
     '-c:v', 'libvpx-vp9',         // Decode with VP9
     '-i', treeWebmPath,           // Tree video (transparent)
-    '-filter_complex', filterChain,
+    '-filter_complex',
+    `color=c=#FFFFFF:s=${GRID_CONFIG.canvasWidth}x${GRID_CONFIG.canvasHeight}:r=${VIDEO_CONFIG.fps}[bg];` +
+    `[1:v]scale=${Math.round(drawWidth)}:${Math.round(drawHeight)}:flags=lanczos,format=yuva420p[scaled];` +
+    `[0:v]format=yuva420p[base];` +
+    `[bg][base]overlay=0:0:shortest=1[withgrid];` +
+    `[withgrid][scaled]overlay=${Math.round(treeX)}:${Math.round(treeY)}:shortest=1[out]`,
     '-map', '[out]',
     '-c:v', 'libvpx-vp9',         // VP9 codec for webm
     '-b:v', '0',                  // Variable bitrate mode

@@ -197,8 +197,16 @@ export class LocalEntity implements Generate {
                 '-i', videoPath,
                 '-vf', [
                     // Remove black background and create alpha channel
-                    'colorkey=black:0.15:0.15',
-                    'colorkey=0x101010:0.1:0.1',
+                          'colorkey=black:0.15:0.15',
+                        // Also catch near-black colors
+                        'colorkey=0x101010:0.1:0.1',
+                        // Erode/dilate to clean up edges (morphological operations)
+                        'erosion=threshold0=0:threshold1=0:threshold2=0:threshold3=255',
+                        'dilation=threshold0=0:threshold1=0:threshold2=0:threshold3=255',
+                        // Slight blur on alpha channel for feathering
+                        'split[rgb][alpha]',
+                        '[alpha]alphaextract,boxblur=1:1[alphablur]',
+                        '[rgb][alphablur]alphamerge',
                     'format=yuva420p' // Format for VP9 with alpha
                 ].join(','),
                 '-c:v', 'libvpx-vp9',
