@@ -9,6 +9,7 @@ import {  WeepingWillow } from "./entities/weeping-willow";
 import { Maple } from "./entities/maple";
 import { Wisteria } from "./entities/wisteria";
 import type { Entity } from "./models/entity";
+import { LocalEntity } from "./entities/local-entity";
 
 export const entities: Map<string, Entity> = new Map<string, Entity>([
     ["tree", {
@@ -91,5 +92,14 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         variants: 50,
         basePrice: 150,
         generate: new WeepingWillow()
+    }],
+    ["lit_tree", {
+        name: "Local Video",
+        description: "Generate from a local video file.",
+        creator: "Nethical",
+        donate: "https://digipaws.life/donate",
+        variants: 1,
+        basePrice: 200,
+        generate: new LocalEntity({ videoFilename: "lit_tree" })
     }]
 ]);

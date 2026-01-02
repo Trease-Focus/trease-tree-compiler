@@ -5,9 +5,8 @@ import { entities } from '../src/entities';
 import type { Config } from '../src/types/config';
 import { generateGrid, type TreeConfig } from '../src/grid_image';
 
-const BASE_SEED = '6969696969696969';
+const BASE_SEED = '0';
 const OUTPUT_DIR = path.join(__dirname, '..', 'cache', 'images');
-const NUM_VARIATIONS = 100;
 
 /**
  * SingleGridGenerator - Generates a single grid structure for each entity
@@ -16,12 +15,10 @@ const NUM_VARIATIONS = 100;
 export class SingleGridGenerator {
     private baseSeed: string;
     private outputDir: string;
-    private numVariations: number;
 
-    constructor(baseSeed: string = BASE_SEED, outputDir: string = OUTPUT_DIR, numVariations: number = NUM_VARIATIONS) {
+    constructor(baseSeed: string = BASE_SEED, outputDir: string = OUTPUT_DIR) {
         this.baseSeed = baseSeed;
         this.outputDir = outputDir;
-        this.numVariations = numVariations;
     }
 
     private getSeed(index: number): string {
@@ -55,17 +52,17 @@ export class SingleGridGenerator {
     async generateAll(): Promise<void> {
         console.log(`\n🌳 Single Grid Generator`);
         console.log(`   Base Seed: ${this.baseSeed}`);
-        console.log(`   Variations: ${this.numVariations}`);
         console.log(`   Output: ${this.outputDir}\n`);
 
         await this.ensureOutputDir();
 
-        console.log(`📦 Generating ${this.numVariations} grids for ${entities.size} entities...\n`);
+        console.log(`📦 Generating grids for ${entities.size} entities...\n`);
 
-        for (const [entityName, generator] of entities) {
-            console.log(`🔄 Processing: ${entityName}`);
+        for (const [entityName, entity] of entities) {
+            const numVariations = entity.variants;
+            console.log(`🔄 Processing: ${entityName} (${numVariations} variants)`);
 
-            for (let i = 0; i < this.numVariations; i++) {
+            for (let i = 0; i < numVariations; i++) {
                 const seed = this.getSeed(i);
                 const entityConfig: Config = {
                     photoOnly: true,
@@ -81,7 +78,7 @@ export class SingleGridGenerator {
                 };
 
                 try {
-                    const result = await generator.generate.generate(null as any, undefined, entityConfig);
+                    const result = await entity.generate.generate(null as any, undefined, entityConfig);
                     const tempPath = path.join(this.outputDir, `${entityName}_${i}.png`);
 
                     if (result.imagePath) {
@@ -101,7 +98,7 @@ export class SingleGridGenerator {
                     }
                 }
             }
-            console.log(`  ✓ Generated ${this.numVariations} variations for ${entityName}`);
+            console.log(`  ✓ Generated ${numVariations} variations for ${entityName}`);
         }
 
         console.log(`\n✅ Single grid generation complete!`);
@@ -109,14 +106,10 @@ export class SingleGridGenerator {
     }
 
     async generateForEntity(entityName: string): Promise<void> {
-        console.log(`\n🌳 Single Grid Generator - ${entityName}`);
-        console.log(`   Base Seed: ${this.baseSeed}`);
-        console.log(`   Variations: ${this.numVariations}\n`);
-
         await this.ensureOutputDir();
 
-        const generator = entities.get(entityName);
-        if (!generator) {
+        const entity = entities.get(entityName);
+        if (!entity) {
             console.error(`Entity "${entityName}" not found. Available entities:`);
             for (const name of entities.keys()) {
                 console.log(`  - ${name}`);
@@ -124,9 +117,14 @@ export class SingleGridGenerator {
             return;
         }
 
+        const numVariations = entity.variants;
+        console.log(`\n🌳 Single Grid Generator - ${entityName}`);
+        console.log(`   Base Seed: ${this.baseSeed}`);
+        console.log(`   Variations: ${numVariations}\n`);
+
         console.log(`🔄 Processing: ${entityName}`);
 
-        for (let i = 0; i < this.numVariations; i++) {
+        for (let i = 0; i < numVariations; i++) {
             const seed = this.getSeed(i);
             const entityConfig: Config = {
                 photoOnly: true,
@@ -142,7 +140,7 @@ export class SingleGridGenerator {
             };
 
             try {
-                const result = await generator.generate.generate(null as any, undefined, entityConfig);
+                const result = await entity.generate.generate(null as any, undefined, entityConfig);
                 const tempPath = path.join(this.outputDir, `${entityName}_${i}.png`);
 
                 if (result.imagePath) {
@@ -153,17 +151,17 @@ export class SingleGridGenerator {
                     await this.generateSingleGrid(entityName, i, tempPath);
                 }
             } catch (error) {
-                console.error(`  ✗ Error generating ${entityName}_${i}:`, error);
+                console.error(`  \u2717 Error generating ${entityName}_${i}:`, error);
             }
         }
 
-        console.log(`  ✓ Generated ${this.numVariations} variations`);
+        console.log(`  \u2713 Generated ${numVariations} variations`);
         console.log(`\n✅ Done!`);
     }
 }
 
 async function main() {
-    const generator = new SingleGridGenerator(BASE_SEED, OUTPUT_DIR, NUM_VARIATIONS);
+    const generator = new SingleGridGenerator(BASE_SEED, OUTPUT_DIR);
     const entityArg = process.argv[2];
     
     if (entityArg) {

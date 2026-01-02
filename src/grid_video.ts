@@ -45,7 +45,7 @@ export async function generateGridVideo(
   treeWebmPath: string,
   outputPath: string,
   treeScale: number = 1,
-  filter: FilterName = 'none'
+  filter: FilterName = 'winter'
 ): Promise<void> {
   console.log('Loading tree image for anchor calculation...');
   const anchorImage = await loadImage(treePngPath);
@@ -99,11 +99,11 @@ export async function generateGridVideo(
   // Build filter chain - add color grading filter if specified
   const filterChain = 
     `color=c=#FFFFFF:s=${GRID_CONFIG.canvasWidth}x${GRID_CONFIG.canvasHeight}:r=${VIDEO_CONFIG.fps}[bg];` +
-    `[1:v]scale=${Math.round(drawWidth)}:${Math.round(drawHeight)}:flags=lanczos,format=yuva420p[scaled];` +
+    `[1:v]scale=${Math.round(drawWidth)}:${Math.round(drawHeight)}:flags=lanczos,format=yuva420p` +
+    (hasFilter ? `[scaled];[scaled]${filterConfig.ffmpegFilter}[filtered]` : `[filtered]`) + `;` +
     `[0:v]format=yuva420p[base];` +
     `[bg][base]overlay=0:0:shortest=1[withgrid];` +
-    `[withgrid][scaled]overlay=${Math.round(treeX)}:${Math.round(treeY)}:shortest=1` +
-    (hasFilter ? `[composed];[composed]${filterConfig.ffmpegFilter}[out]` : '[out]');
+    `[withgrid][filtered]overlay=${Math.round(treeX)}:${Math.round(treeY)}:shortest=1[out]`;
   
   // FFmpeg command to overlay tree video on base grid
   const ffmpegArgs = [
