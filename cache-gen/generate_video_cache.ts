@@ -5,22 +5,29 @@ import { entities } from '../src/entities';
 import type { Config } from '../src/types/config';
 import { generateGridVideo } from '../src/grid_video';
 
-const SEED = '6969696969696969';
+const BASE_SEED = '6969696969696969';
 const OUTPUT_DIR = path.join(__dirname, '..', 'cache', 'video');
 const IMAGES_DIR = path.join(__dirname, '..', 'cache', 'images');
 const TREE_SCALE = 0.8;
+const NUM_VARIATIONS = 100;
 
 /**
  * VideoGenerator - Generates videos for each entity
  * and saves them under cache/video
  */
 export class VideoGenerator {
-    private seed: string;
+    private baseSeed: string;
     private outputDir: string;
+    private numVariations: number;
 
-    constructor(seed: string = SEED, outputDir: string = OUTPUT_DIR) {
-        this.seed = seed;
+    constructor(baseSeed: string = BASE_SEED, outputDir: string = OUTPUT_DIR, numVariations: number = NUM_VARIATIONS) {
+        this.baseSeed = baseSeed;
         this.outputDir = outputDir;
+        this.numVariations = numVariations;
+    }
+
+    private getSeed(index: number): string {
+        return `${this.baseSeed}${index.toString().padStart(4, '0')}`;
     }
 
     private async ensureOutputDir(): Promise<void> {
@@ -32,51 +39,53 @@ export class VideoGenerator {
 
     async generateAll(): Promise<void> {
         console.log(`\n🎬 Video Generator`);
-        console.log(`   Seed: ${this.seed}`);
+        console.log(`   Base Seed: ${this.baseSeed}`);
+        console.log(`   Variations: ${this.numVariations}`);
         console.log(`   Output: ${this.outputDir}\n`);
 
         await this.ensureOutputDir();
 
-        const entityConfig: Config = {
-            photoOnly: false,
-            width: 480,
-            height: 480,
-            fps: 25,
-            durationSeconds: 30,
-            seed: this.seed,
-            filename: 'video.webm',
-            imageFilename: 'image.png',
-            padding: 80,
-            save_as_file: true
-        };
-
-        console.log(`📦 Generating videos for ${entities.size} entities...\n`);
+        console.log(`📦 Generating ${this.numVariations} videos for ${entities.size} entities...\n`);
 
         for (const [entityName, generator] of entities) {
             console.log(`🔄 Processing: ${entityName}`);
 
-            try {
-                const result = await generator.generate(null as any, undefined, entityConfig);
+            for (let i = 0; i < this.numVariations; i++) {
+                const seed = this.getSeed(i);
+                const entityConfig: Config = {
+                    photoOnly: false,
+                    width: 480,
+                    height: 480,
+                    fps: 25,
+                    durationSeconds: 30,
+                    seed: seed,
+                    filename: 'video.webm',
+                    imageFilename: 'image.png',
+                    padding: 80,
+                    save_as_file: true
+                };
 
-                if (result.videoPath) {
-                    const treePngPath = path.join(IMAGES_DIR, `${entityName}.png`);
-                    const gridOutputPath = path.join(this.outputDir, `${entityName}.webm`);
-                    
-                    console.log(`  🎬 Generating grid video...`);
-                    await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE);
-                    console.log(`  ✓ Saved grid video: ${gridOutputPath}`);
-                    
-                    // Delete the original non-grid video
-                    if (existsSync(result.videoPath)) {
-                        await unlink(result.videoPath);
-                        console.log(`  🗑️ Deleted temp video: ${result.videoPath}`);
+                try {
+                    const result = await generator.generate(null as any, undefined, entityConfig);
+
+                    if (result.videoPath) {
+                        const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);
+                        const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
+                        
+                        await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE);
+                        
+                        // Delete the original non-grid video
+                        if (existsSync(result.videoPath)) {
+                            await unlink(result.videoPath);
+                        }
+                    } else {
+                        console.error(`  ✗ No video generated for ${entityName}_${i}`);
                     }
-                } else {
-                    console.error(`  ✗ No video generated for ${entityName}`);
+                } catch (error) {
+                    console.error(`  ✗ Error generating ${entityName}_${i}:`, error);
                 }
-            } catch (error) {
-                console.error(`  ✗ Error generating ${entityName}:`, error);
             }
+            console.log(`  ✓ Generated ${this.numVariations} variations for ${entityName}`);
         }
 
         console.log(`\n✅ Video generation complete!`);
@@ -85,7 +94,8 @@ export class VideoGenerator {
 
     async generateForEntity(entityName: string): Promise<void> {
         console.log(`\n🎬 Video Generator - ${entityName}`);
-        console.log(`   Seed: ${this.seed}\n`);
+        console.log(`   Base Seed: ${this.baseSeed}`);
+        console.log(`   Variations: ${this.numVariations}\n`);
 
         await this.ensureOutputDir();
 
@@ -98,50 +108,51 @@ export class VideoGenerator {
             return;
         }
 
-        const entityConfig: Config = {
-            photoOnly: false,
-            width: 480,
-            height: 480,
-            fps: 25,
-            durationSeconds: 30,
-            seed: this.seed,
-            filename: 'video.webm',
-            imageFilename: 'image.png',
-            padding: 80,
-            save_as_file: true
-        };
-
         console.log(`🔄 Processing: ${entityName}`);
 
-        try {
-            const result = await generator.generate(null as any, undefined, entityConfig);
+        for (let i = 0; i < this.numVariations; i++) {
+            const seed = this.getSeed(i);
+            const entityConfig: Config = {
+                photoOnly: false,
+                width: 480,
+                height: 480,
+                fps: 25,
+                durationSeconds: 30,
+                seed: seed,
+                filename: 'video.webm',
+                imageFilename: 'image.png',
+                padding: 80,
+                save_as_file: true
+            };
 
-            if (result.videoPath) {
-                const treePngPath = path.join(IMAGES_DIR, `${entityName}.png`);
-                const gridOutputPath = path.join(this.outputDir, `${entityName}.webm`);
-                
-                console.log(`  🎬 Generating grid video...`);
-                await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE);
-                console.log(`  ✓ Saved grid video: ${gridOutputPath}`);
-                
-                // Delete the original non-grid video
-                if (existsSync(result.videoPath)) {
-                    await unlink(result.videoPath);
-                    console.log(`  🗑️ Deleted temp video: ${result.videoPath}`);
+            try {
+                const result = await generator.generate(null as any, undefined, entityConfig);
+
+                if (result.videoPath) {
+                    const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);
+                    const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
+                    
+                    await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE);
+                    
+                    // Delete the original non-grid video
+                    if (existsSync(result.videoPath)) {
+                        await unlink(result.videoPath);
+                    }
+                } else {
+                    console.error(`  ✗ No video generated for ${entityName}_${i}`);
                 }
-            } else {
-                console.error(`  ✗ No video generated for ${entityName}`);
+            } catch (error) {
+                console.error(`  ✗ Error generating ${entityName}_${i}:`, error);
             }
-        } catch (error) {
-            console.error(`  ✗ Error generating ${entityName}:`, error);
         }
 
+        console.log(`  ✓ Generated ${this.numVariations} variations`);
         console.log(`\n✅ Done!`);
     }
 }
 
 async function main() {
-    const generator = new VideoGenerator(SEED, OUTPUT_DIR);
+    const generator = new VideoGenerator(BASE_SEED, OUTPUT_DIR, NUM_VARIATIONS);
     const entityArg = process.argv[2];
 
     if (entityArg) {

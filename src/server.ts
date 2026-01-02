@@ -6,11 +6,10 @@ import { entities } from "./entities";
 const app = new Bao();
 
 app.get("/", (ctx) => {
-  return ctx.sendText("Hello World!");
+  return ctx.sendText("Am i alive?");
 });
 
 
-// Endpoint to generate image or video based on query parameters
 app.get("/image", async (ctx) => {
     const url = new URL(ctx.req.url);
     const config: Config = {
