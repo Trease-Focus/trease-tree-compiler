@@ -212,7 +212,8 @@ bun run src/server.ts
 
 Contributions are what make the open-source community amazing! Any contributions you make are **greatly appreciated**.
 
-
+NOTE: This repo only accepts tree generation done via pure code. If you are an artist and wish to contribute without prior knowledge of code, please follow this link:
+[How to submit a artwork](https://github.com/Trease-Focus/trease-artwork)
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingPlant`)
