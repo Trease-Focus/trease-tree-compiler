@@ -66,7 +66,7 @@ export class VideoGenerator {
                 };
 
                 try {
-                    const result = await generator.generate(null as any, undefined, entityConfig);
+                    const result = await generator.generate.generate(null as any, undefined, entityConfig);
 
                     if (result.videoPath) {
                         const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);
@@ -126,7 +126,7 @@ export class VideoGenerator {
             };
 
             try {
-                const result = await generator.generate(null as any, undefined, entityConfig);
+                const result = await generator.generate.generate(null as any, undefined, entityConfig);
 
                 if (result.videoPath) {
                     const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);

@@ -81,7 +81,7 @@ export class SingleGridGenerator {
                 };
 
                 try {
-                    const result = await generator.generate(null as any, undefined, entityConfig);
+                    const result = await generator.generate.generate(null as any, undefined, entityConfig);
                     const tempPath = path.join(this.outputDir, `${entityName}_${i}.png`);
 
                     if (result.imagePath) {
@@ -142,7 +142,7 @@ export class SingleGridGenerator {
             };
 
             try {
-                const result = await generator.generate(null as any, undefined, entityConfig);
+                const result = await generator.generate.generate(null as any, undefined, entityConfig);
                 const tempPath = path.join(this.outputDir, `${entityName}_${i}.png`);
 
                 if (result.imagePath) {

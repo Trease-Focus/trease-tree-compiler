@@ -43,7 +43,7 @@ app.get("/video", async (ctx) => {
     }
     const readableStream = new ReadableStream({
         start(controller) {
-            generator.generate(ctx,(process, videoStream) => 
+            generator.generate.generate(ctx,(process, videoStream) => 
                 {
                 videoStream.on('data', (chunk: Buffer) => {
                     controller.enqueue(chunk);
@@ -84,7 +84,7 @@ app.get("/treeInfo", async (ctx) => {
     if (!generator) {
         return ctx.sendText("Generator not found", {status: 404});
     }
-    const result = await generator.getInfo(config);
+    const result = await generator.generate.getInfo(config);
     if (!result.trunkStartPosition) {
         return ctx.sendText("Tree info generation failed", {status: 500});
     }
