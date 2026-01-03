@@ -34,7 +34,7 @@ export class VideoGenerator {
         }
     }
 
-    async generateAll(): Promise<void> {
+    async generateAll(forceOverwrite: boolean = false): Promise<void> {
         console.log(`\n🎬 Video Generator`);
         console.log(`   Base Seed: ${this.baseSeed}`);
         console.log(`   Output: ${this.outputDir}\n`);
@@ -48,6 +48,11 @@ export class VideoGenerator {
             console.log(`🔄 Processing: ${entityName} (${numVariations} variants)`);
 
             for (let i = 0; i < numVariations; i++) {
+                const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
+                if (!forceOverwrite && existsSync(gridOutputPath)) {
+                    console.log(`  ⏩ Skipping ${entityName}_${i} (already cached)`);
+                    continue;
+                }
                 const seed = this.getSeed(i);
                 const entityConfig: Config = {
                     photoOnly: false,
@@ -67,10 +72,7 @@ export class VideoGenerator {
 
                     if (result.videoPath) {
                         const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);
-                        const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
-                        
-                        await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE,"winter");
-                        
+                        await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE, "winter");
                         // Delete the original non-grid video
                         if (existsSync(result.videoPath) && result.videoPath.includes('/cache/')) {
                             await unlink(result.videoPath);
@@ -89,7 +91,7 @@ export class VideoGenerator {
         console.log(`   Output directory: ${this.outputDir}\n`);
     }
 
-    async generateForEntity(entityName: string): Promise<void> {
+    async generateForEntity(entityName: string, forceOverwrite: boolean = false): Promise<void> {
         await this.ensureOutputDir();
 
         const entity = entities.get(entityName);
@@ -109,6 +111,11 @@ export class VideoGenerator {
         console.log(`🔄 Processing: ${entityName}`);
 
         for (let i = 0; i < numVariations; i++) {
+            const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
+            if (!forceOverwrite && existsSync(gridOutputPath)) {
+                console.log(`  ⏩ Skipping ${entityName}_${i} (already cached)`);
+                continue;
+            }
             const seed = this.getSeed(i);
             const entityConfig: Config = {
                 photoOnly: false,
@@ -128,10 +135,7 @@ export class VideoGenerator {
 
                 if (result.videoPath) {
                     const treePngPath = path.join(IMAGES_DIR, `${entityName}_${i}.png`);
-                    const gridOutputPath = path.join(this.outputDir, `${entityName}_${i}.webm`);
-                    
-                    await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE,"winter");
-                    
+                    await generateGridVideo(treePngPath, result.videoPath, gridOutputPath, TREE_SCALE);
                     // Delete the original non-grid video
                     if (existsSync(result.videoPath) && result.videoPath.includes('/cache/')) {
                         await unlink(result.videoPath);
@@ -149,14 +153,16 @@ export class VideoGenerator {
     }
 }
 
+
 async function main() {
     const generator = new VideoGenerator(BASE_SEED, OUTPUT_DIR);
     const entityArg = process.argv[2];
+    const forceArg = process.argv.includes('--force');
 
     if (entityArg) {
-        await generator.generateForEntity(entityArg);
+        await generator.generateForEntity(entityArg, forceArg);
     } else {
-        await generator.generateAll();
+        await generator.generateAll(forceArg);
     }
 }
 
