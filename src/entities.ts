@@ -10,6 +10,7 @@ import { Maple } from "./entities/maple";
 import { Wisteria } from "./entities/wisteria";
 import type { Entity } from "./models/entity";
 import { LocalEntity } from "./entities/local-entity";
+import { Weathered } from "./entities/weathered";
 
 export const entities: Map<string, Entity> = new Map<string, Entity>([
     ["tree", {
@@ -19,7 +20,8 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 4,
         basePrice: 100,
-        generate: new Tree()
+        generate: new Tree(),
+        isGrowable: true
     }],
     ["sakura", {
         name: "Sakura",
@@ -28,7 +30,9 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 5,
         basePrice: 150,
-        generate: new Sakura()
+        generate: new Sakura(),
+        isGrowable: true
+
     }],
     ["sunflower", {
         name: "Sunflower",
@@ -36,8 +40,9 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         creator: "Nethical",
         donate: "https://digipaws.life/donate",
         variants: 9,
-        basePrice: 100,
-        generate: new Sunflower()
+        basePrice: 50,
+        generate: new Sunflower(),
+        isGrowable: true
     }],
     ["cedar", {
         name: "Cedar",
@@ -45,8 +50,9 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         creator: "Nethical",
         donate: "https://digipaws.life/donate",
         variants: 8,
-        basePrice: 120,
-        generate: new Cedar()
+        basePrice: 60,
+        generate: new Cedar(),
+        isGrowable: true
     }],
     ["lavender", {
         name: "Lavender",
@@ -55,7 +61,8 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 7,
         basePrice: 100,
-        generate: new Lavender()
+        generate: new Lavender(),
+        isGrowable: true
     }],
     ["pink_balls_tree", {
         name: "Pink Balls Tree",
@@ -64,7 +71,8 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 9,
         basePrice: 130,
-        generate: new PinkBallsTree()
+        generate: new PinkBallsTree(),
+        isGrowable: true
     }],
     ["maple", {
         name: "Maple",
@@ -73,7 +81,8 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 10,
         basePrice: 150,
-        generate: new Maple()
+        generate: new Maple(),
+        isGrowable: true
     }],
     ["wisteria", {
         name: "Wisteria",
@@ -82,7 +91,8 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 10,
         basePrice: 150,
-        generate: new Wisteria()
+        generate: new Wisteria(),
+        isGrowable: true
     }],
     ["weeping_willow", {
         name: "Weeping Willow",
@@ -91,15 +101,28 @@ export const entities: Map<string, Entity> = new Map<string, Entity>([
         donate: "https://digipaws.life/donate",
         variants: 9,
         basePrice: 150,
-        generate: new WeepingWillow()
+        generate: new WeepingWillow(),
+        isGrowable: true
     }],
     ["lit_tree", {
-        name: "Local Video",
-        description: "Generate from a local video file.",
+        name: "Lit Tree",
+        description: "A christmas tree with lights.",
         creator: "Nethical",
         donate: "https://digipaws.life/donate",
         variants: 1,
         basePrice: 200,
-        generate: new LocalEntity({ videoFilename: "lit_tree" })
-    }]
+        generate: new LocalEntity({ videoFilename: "lit_tree" }),
+        isGrowable: true
+    }],[
+    "weathered", {
+        name: "Weathered Tree",
+        description: "A tree that has weathered many storms.",
+        creator: "Nethical",
+        donate: "https://digipaws.life/donate",
+        variants: 5,
+        basePrice: 180,
+        generate: new Weathered(),
+        isGrowable: false
+    }
+]
 ]);

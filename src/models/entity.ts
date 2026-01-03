@@ -8,4 +8,5 @@ export interface Entity {
     variants: number;
     basePrice: number;
     generate: Generate;
+    isGrowable: boolean;
 }
